@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+    <title>Docker Compose</title>
+    <link rel="shortcut icon" href="./favicon.ico" />
+    <link rel="stylesheet" href="./dist/reset.css" />
+    <link rel="stylesheet" href="./dist/reveal.css" />
+    <link rel="stylesheet" href="./dist/theme/beige.css" id="theme" />
+    <link rel="stylesheet" href="./css/highlight/base16/zenburn.css" />
+
+
+  </head>
+  <body>
+    <div class="reveal">
+      <div class="slides"><section  data-markdown><script type="text/template">
+
+
+
+
+## Docker Compose
+
+- First released in 2014 as standalone tool for defining and running multi-container Docker applications
+- Later became a Docker plugin
+- Now, it's shipped with Docker Desktop by default
+
+<aside class="notes"><p>You may not know it, but you may already have it.</p>
+</aside></script></section><section  data-markdown><script type="text/template">
+## What's the big deal?
+
+- WordPress as an example
+- 2 containers: app-server and database(mysql)
+- 1 network
+- 1 persistent volume
+
+
+<aside class="notes"><p>What is defining and running multi-container Docker applications?  </p>
+<ul>
+<li>Instead of explaining what it is, I&#39;ll show you by example.</li>
+<li>WordPress: popular website/webpage creating tool</li>
+<li>Containers run in isolation</li>
+</ul>
+</aside></script></section><section  data-markdown><script type="text/template">
+### With Docker
+
+```bash [1-3|4-12|13-20|21-26]
+
+docker network create -d bridge wordpress-net
+docker volume create db_data
+  
+docker run -d --name db --network wordpress-net \
+    -v db_data:/var/lib/mysql \
+    -e MYSQL_ROOT_PASSWORD=somewordpress \
+    -e MYSQL_DATABASE=wordpress \
+    -e MYSQL_USER=wordpress \
+    -e MYSQL_PASSWORD=wordpress \
+    mysql
+
+docker run -d --name wordpress --network wordpress-net \
+    -p 80:80 \
+    -e WORDPRESS_DB_HOST=db \
+    -e WORDPRESS_DB_USER=wordpress \
+    -e WORDPRESS_DB_PASSWORD=wordpress \
+    -e WORDPRESS_DB_NAME=wordpress \
+    wordpress 
+
+# To shut down
+docker stop wordpress db
+docker rm wordpress db
+
+docker network rm wordpress-net
+docker volume rm db_data
+
+```
+</script></section><section  data-markdown><script type="text/template">
+### With Docker Compose
+
+Define everything in compose.yml
+```YAML [1-11|12-20|21-23]
+services:
+  db:
+    image: mysql
+    volumes:
+      - db_data:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=somewordpress
+      - MYSQL_DATABASE=wordpress
+      - MYSQL_USER=wordpress
+      - MYSQL_PASSWORD=wordpress
+
+  wordpress:
+    image: wordpress
+    ports:
+      - 80:80
+    environment:
+      - WORDPRESS_DB_HOST=db
+      - WORDPRESS_DB_USER=wordpress
+      - WORDPRESS_DB_PASSWORD=wordpress
+      - WORDPRESS_DB_NAME=wordpress
+
+  volumes:
+    db_data:
+```
+
+<aside class="notes"><p>This is the &quot;define&quot; part of docker compose.</p>
+</aside></script></section><section  data-markdown><script type="text/template">
+Simple commands for doing things
+```bash [1-2|3-6|7-9]
+docker compose up [-d]
+# take care of container, network, and volume
+
+docker compose down [-v] [--rmi all]
+# stop and remove container, network, 
+# and optionally volume or images
+
+docker compose pull
+# to update your app to a later version
+```
+</script></section><section  data-markdown><script type="text/template">
+### Compose is more than just for runtime
+
+- Build and publish your image using Docker?
+- Build your application using Docker?
+  - Setup build environment
+  - Install dependencies
+  - Compiling source code
+  - Creating build artifacts
+  </script></section><section  data-markdown><script type="text/template">
+<!-- .element: class="fragment" -->
+
+### IRSAViewer
+- Take IRSAViewer as an example
+- Uses Firefly multi-stage builds
+- Handles building, testing, running the application
+- DevMode: Development Mode
+  - Auto build/deploy when source code changes
+
+
+**Stage graph**  <br>
+  deps &rarr; builder &rarr; final   <br>
+  &#8627; dev_mode
+
+<!-- .element: class="fragment" -->
+
+<aside class="notes"><p>Instead of going over all of the features available, I&#39;ll show 
+you how we&#39;re using it.</p>
+</aside></script></section><section  data-markdown><script type="text/template">
+### IRSAViewer compose file
+
+
+```YAML [3-4|5-9|13-21|16,17|23-30|24-26|27-29]
+version: '3.4'
+services:
+  irsaviewer:
+    image: ipac/irsa-irsaviewer:${BUILD_TAG:-latest}
+    build:
+      dockerfile: firefly/docker/Dockerfile
+      args:
+        build_dir: irsa-ife
+        target: irsaviewer:war
+    ports:
+      - "8080:8080"
+
+  test:
+    build:
+      dockerfile: firefly/docker/Dockerfile
+      target: deps
+    command: bash -c "cd irsa-ife && gradle test"
+    volumes: &volInfo
+      - ../firefly_test_data:/opt/work/firefly_test_data
+      - ../firefly:/opt/work/firefly
+      - ../irsa-ife:/opt/work/irsa-ife
+
+  devMode:
+    build:
+      dockerfile: firefly/docker/Dockerfile
+      target: dev_mode
+    ports: &devPorts
+      - "8080:8080"
+      - "5050:5050"
+    volumes: *volInfo
+```</script></section><section ><section data-markdown><script type="text/template">
+### Dockerized DEV environment
+
+```bash
+docker compose up irsaviewer [-d]
+# build and deploy irsaviewer locally on port 8080
+
+docker compose run test
+# runs test then exit 
+
+docker compose up devMode
+# build and deploy irsaviewer locally, then enter DevMode
+```
+___
+
+(Side Track) &darr;
+
+
+<aside class="notes"><p>registry/org/repo:tag</p>
+</aside></script></section><section data-markdown><script type="text/template">
+### Benefits of Dev Environment as code
+
+- Dev env is defined in Dockerfile and commit with source code
+- Build from previous commits
+- Avoid maintain lengthy, mostly outdated setup documents
+
+<aside class="notes"><p>Have you tried going back to fix something on an old branch,
+after you&#39;ve updated your dev env?  Nightmare, I know.
+Not to mention build script and Jenkins setup.  Anyways, let&#39;s move on.</p>
+</aside></script></section></section><section  data-markdown><script type="text/template">
+### There's more
+
+- Share compose configurations 
+  - Chain multiple compose files
+  - YAML anchors and extensions 
+- Service profile
+- Variable substitution
+</script></section><section  data-markdown><script type="text/template">
+##### Wonder how I created this slide using only Markdown?
+
+https://github.com/loitly/grits-2022
+
+___
+
+## Thank You
+
+</script></section></div>
+    </div>
+
+    <script src="./dist/reveal.js"></script>
+
+    <script src="./plugin/markdown/markdown.js"></script>
+    <script src="./plugin/highlight/highlight.js"></script>
+    <script src="./plugin/zoom/zoom.js"></script>
+    <script src="./plugin/notes/notes.js"></script>
+    <script src="./plugin/math/math.js"></script>
+    <script>
+      function extend() {
+        var target = {};
+        for (var i = 0; i < arguments.length; i++) {
+          var source = arguments[i];
+          for (var key in source) {
+            if (source.hasOwnProperty(key)) {
+              target[key] = source[key];
+            }
+          }
+        }
+        return target;
+      }
+
+      // default options to init reveal.js
+      var defaultOptions = {
+        controls: true,
+        progress: true,
+        history: true,
+        center: true,
+        transition: 'default', // none/fade/slide/convex/concave/zoom
+        controls: true,
+        slideNumber: true,
+        plugins: [
+          RevealMarkdown,
+          RevealHighlight,
+          RevealZoom,
+          RevealNotes,
+          RevealMath
+        ]
+      };
+
+      // options from URL query string
+      var queryOptions = Reveal().getQueryHash() || {};
+
+      var options = extend(defaultOptions, {}, queryOptions);
+    </script>
+
+
+    <script>
+      Reveal.initialize(options);
+    </script>
+  </body>
+</html>
