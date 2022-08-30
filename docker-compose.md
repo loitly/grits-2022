@@ -115,13 +115,18 @@ docker compose pull
 
 ### Compose is more than just for runtime
 
-- Build and publish your image using Docker?
-- Build your application using Docker?
-  - Setup build environment
-  - Install dependencies
-  - Compiling source code
-  - Creating build artifacts
-  
+- Define parameters for building the image
+  - registry, org, repos, and tag
+- Used for `push` (publish)
+- Define parameters for building the application
+  - build arguments
+  - secrets, platform, context, etc
+- Dev related tasks
+  - testing
+  - debugging
+
+Note: registry/org/repo:tag
+
 ---
 
 <!-- .element: class="fragment" -->
@@ -198,8 +203,6 @@ ___
 
 (Side Track) &darr;
 
-
-Note: registry/org/repo:tag
 
 ----
 

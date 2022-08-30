@@ -10,8 +10,8 @@ At terminal, run
 
     docker compose up dev
 
-Then, go to http://localhost:8000/slides.md  
-Start editing slides.md to see it renders in the browser.  
+Then, go to http://localhost:8000/docker-compose.md 
+Start editing docker-compose.md file to see it renders in the browser.  
 
 
 ### Create static pages
@@ -33,4 +33,4 @@ At terminal, run
 
     docker compose up dev
 
-Then, go to http://localhost:8000/slides.md?print-pdf
+Then, go to http://localhost:8000/docker-compose.md?print-pdf

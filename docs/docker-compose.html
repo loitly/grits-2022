@@ -121,13 +121,18 @@ docker compose pull
 </script></section><section  data-markdown><script type="text/template">
 ### Compose is more than just for runtime
 
-- Build and publish your image using Docker?
-- Build your application using Docker?
-  - Setup build environment
-  - Install dependencies
-  - Compiling source code
-  - Creating build artifacts
-  </script></section><section  data-markdown><script type="text/template">
+- Define parameters for building the image
+  - registry, org, repos, and tag
+- Used for `push` (publish)
+- Define parameters for building the application
+  - build arguments
+  - secrets, platform, context, etc
+- Dev related tasks
+  - testing
+  - debugging
+
+<aside class="notes"><p>registry/org/repo:tag</p>
+</aside></script></section><section  data-markdown><script type="text/template">
 <!-- .element: class="fragment" -->
 
 ### IRSAViewer
@@ -198,9 +203,7 @@ ___
 
 (Side Track) &darr;
 
-
-<aside class="notes"><p>registry/org/repo:tag</p>
-</aside></script></section><section data-markdown><script type="text/template">
+</script></section><section data-markdown><script type="text/template">
 ### Benefits of Dev Environment as code
 
 - Dev env is defined in Dockerfile and commit with source code
