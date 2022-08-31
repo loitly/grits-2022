@@ -190,6 +190,12 @@ services:
 ### Dockerized DEV environment
 
 ```bash
+docker compose build irsaviewer
+# build irsaviewer image
+
+docker compose push irsaviewer
+# publish irsaviewer image
+
 docker compose up irsaviewer [-d]
 # build and deploy irsaviewer locally on port 8080
 
